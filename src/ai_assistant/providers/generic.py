@@ -9,14 +9,11 @@ class GenericProvider(LLMProvider):
                 api_key=api_key
             )
 
-    def ask(self, system_prompt: str ,query: str) -> str:
+    def ask(self, messages) -> str:
         try:
             response = self.client.chat.completions.create(
                     model = self.model,
-                    messages = [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": query}
-                    ],
+                    messages = messages,
                     temperature=0.7,
                     stream=False
             )

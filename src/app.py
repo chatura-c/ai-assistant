@@ -13,10 +13,10 @@ ignore_list = ["python3", "ai-assitant", "ai-assistant3", "app.py"]
 
 assistant = AIAssistant()
 provider = GenericProvider("http://localhost:11434/v1/", app_name, "llama3.2")
-profile = Profile("general", "Reply in less than 10 words.")
+profile = Profile("general", "You are a coding agent. Always reply only valid code answering the question.")
 
 assistant.provider = provider
-assistant.profile = profile
+assistant.set_system_prompt(profile.system_prompt)
 
 hyprland_adapter = HyprlandAdapter(app_name)
 

@@ -202,6 +202,7 @@ class DesktopAssistant(QWidget):
         super().__init__()
         self.assistant = assistant
         
+        self.context_text = None
         self.context_signal.connect(self.add_context)
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
@@ -262,11 +263,19 @@ class DesktopAssistant(QWidget):
         bar.setValue(bar.maximum())
 
     def process_chat(self):
+        messages = [] 
         text = self.input_field.text()
-        if text:
+        if text and text.strip() != "":
+            messages.append(text)
             self.add_message(text, is_user=True)
             self.input_field.clear()
-            response = self.assistant.ask(text)
+
+        if self.context_text and self.context_text.strip() != "" :
+            messages.append(self.context_text)
+            self.add_message(self.context_text, is_user=True)
+
+        if len(messages) > 0:
+            response = self.assistant.ask(messages)
             QTimer.singleShot(800, lambda: self.add_message(response, is_user=False))
 
     def mousePressEvent(self, event):
@@ -279,7 +288,9 @@ class DesktopAssistant(QWidget):
 
     @Slot(str)
     def add_context(self, text):
+        self.context_text = text
         self.context_bar.set_context(text)
+        self.process_chat()
     
 class UI:
     def __init__(self, assistant, app_name):

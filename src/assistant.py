@@ -24,9 +24,9 @@ class Host:
     compositor: Compositor
 
 class AIAssistant:
-    profile: Profile
     provider: LLMProvider
-
+    messages = []
+    
     def __init__(self) -> None:
         self.env = self._detect_host_env()
         # self.config = ConfigManager().load()
@@ -41,6 +41,27 @@ class AIAssistant:
 
         return Host(system, desktop, compositor)
 
-    
+
+    def set_system_prompt(self, prompt:str):
+        message = {
+            "role": "system",
+            "content" : prompt
+        } 
+
+        if len(self.messages) > 0 and self.messages[0].role == "system":
+            self.messages[0] = message
+            return
+
+        self.messages.insert(0, message)
+
     def ask(self, query):
-       return self.provider.ask(self.profile.system_prompt, query) 
+        for m in query:
+            self.messages.append({
+                "role": "user",
+                "content": m
+            })
+        response = self.provider.ask(self.messages) 
+        self.messages.append({"role": "assistant", "content": response})
+
+        return response
+        
