@@ -4,7 +4,7 @@ from ai_assistant.adapters.base_adapter import ContextFrame
 from ai_assistant.adapters.hyprland import HyprlandAdapter
 from ai_assistant.core.profile import Profile
 from ai_assistant.providers.generic import GenericProvider
-from ai_assistant.ui.pyside.main import UI
+from ai_assistant.ui.pyside.ui import UI
 from assistant import AIAssistant
 import time
 
