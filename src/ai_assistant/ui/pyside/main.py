@@ -1,9 +1,23 @@
 from PySide6.QtWidgets import (QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QFrame)
-from PySide6.QtCore import Qt, QTimer, QPoint, Signal, Slot
+from PySide6.QtCore import QThread, Qt, QTimer, QPoint, Signal, Slot
 from ai_assistant.ui.pyside.chat_head import ChatHead 
 from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
 from ai_assistant.ui.pyside.context_bar import ContextBar
 from ai_assistant.ui.pyside.chat_box import ChatBox
+
+
+class AskWorker(QThread):
+    finished = Signal(str)
+
+    def __init__(self, provider, messages):
+        super().__init__()
+        self.provider = provider
+        self.messages = messages
+
+    def run(self):
+        response = self.provider.ask(self.messages)
+        self.finished.emit(response)
+
 
 class Chat:
     def __init__(self, head, box) -> None:
@@ -145,9 +159,13 @@ class DesktopAssistant(QWidget):
         #     self.on_message_received(self.context_text, is_user=True)
 
         if len(messages) > 0:
-            response = self.assistant.ask(messages)
-            QTimer.singleShot(800, lambda: self.on_message_received('general', response, is_user=False))
-
+            self.worker = AskWorker(self.assistant, messages)
+            self.worker.finished.connect(self.handle_assistant_response)
+            self.worker.start()
+    
+    
+    def handle_assistant_response(self, response):
+        self.on_message_received('general', response, is_user=False)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
