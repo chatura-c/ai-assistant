@@ -55,12 +55,12 @@ class ChatBubbleContainer(QWidget):
         self.lifetime_timer.timeout.connect(self.animate_out)
 
         if is_user:
-            layout.addStretch()
             layout.addWidget(self.copy_btn, alignment=Qt.AlignBottom)
+            layout.addStretch()
             layout.addWidget(self.bubble)
         else:
-            layout.addWidget(self.bubble)
             layout.addWidget(self.copy_btn, alignment=Qt.AlignBottom)
+            layout.addWidget(self.bubble)
             layout.addStretch()
     
     def enterEvent(self, event):

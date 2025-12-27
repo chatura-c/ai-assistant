@@ -1,6 +1,7 @@
 
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QPushButton, QLabel)
 
+from ai_assistant.ui.pyside.styles import context_bar_style, context_btn_style
 
 class ContextBar(QWidget):
     def __init__(self, on_remove_callback):
