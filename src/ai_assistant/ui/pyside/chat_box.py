@@ -1,17 +1,32 @@
 from PySide6.QtWidgets import (QLabel, QLineEdit, QScrollArea, QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QFrame, QSizePolicy)
-from PySide6.QtCore import Qt, QTimer, QPoint, Signal, Slot
+from PySide6.QtCore import Qt, Signal, QThread
 
+from ai_assistant.core.assistant import AIAssistant
 from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
+
+
+class AskWorker(QThread):
+    finished = Signal(str)
+
+    def __init__(self, provider, messages):
+        super().__init__()
+        self.provider = provider
+        self.messages = messages
+
+    def run(self):
+        response = self.provider.ask(self.messages)
+        self.finished.emit(response)
+
 
 class ChatBox(QWidget):
     text_entered = Signal(str)
 
-    def __init__(self, id):
+    def __init__(self, id, assistant:AIAssistant):
         super().__init__()
         # self.context_callbacks = context_callbacks or {}
             
         self.id = id
-            
+        self.assistant = assistant 
         self.init_ui()
 
     def init_ui(self):
@@ -76,11 +91,31 @@ class ChatBox(QWidget):
         
         self.main_container_layout.addWidget(self.chat_wrapper)
         self.main_container_layout.addWidget(self.input_field, alignment=Qt.AlignCenter)
+    
 
-        
+    def process_chat(self, text):
+        messages = [] 
+        if text and text.strip() != "":
+            messages.append(text)
+            self.add_message(text, is_user=True)
+
+        if len(messages) > 0:
+            self.worker = AskWorker(self.assistant.ask, messages)
+            self.worker.finished.connect(self.handle_assistant_response)
+            self.worker.start()
+ 
+    
+    def handle_assistant_response(self, response):
+        self.add_message(response, is_user=False)
+
+
     def on_text_entered(self):
-        self.text_entered.emit(self.input_field.text())
+        text = self.input_field.text()
+        # self.text_entered.emit(text)
+        self.add_message(text)
+        self.process_chat(text)
         self.input_field.clear()
+
 
     def add_message(self, text, is_user=True):
         msg = ChatBubbleContainer(text, is_user)

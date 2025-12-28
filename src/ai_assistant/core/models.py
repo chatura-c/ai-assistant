@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 class Profile:
     name: str
     system_prompt: str
-
+    picture : str
 
 @dataclass
 class Provider(ABC):

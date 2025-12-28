@@ -1,9 +1,11 @@
-from PySide6.QtWidgets import (QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QFrame)
+from PySide6.QtWidgets import (QPushButton, QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QFrame)
 from PySide6.QtCore import QThread, Qt, QTimer, QPoint, Signal, Slot
+from ai_assistant.core.manager import AssistantManager
 from ai_assistant.ui.pyside.chat_head import ChatHead 
 from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
 from ai_assistant.ui.pyside.context_bar import ContextBar
 from ai_assistant.ui.pyside.chat_box import ChatBox
+from ai_assistant.ui.pyside.settings import SettingsWindow
 
 
 class AskWorker(QThread):
@@ -30,12 +32,13 @@ class DesktopAssistant(QWidget):
 
     chats = {}
     
-    def __init__(self, assistant):
+    def __init__(self, assistant:AssistantManager):
         super().__init__()
         self.assistant = assistant
         self.context_text = None
         self.is_expanded = False  
         self.auto_process = False
+        self.active_chat_id = 'general'
 
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -54,16 +57,38 @@ class DesktopAssistant(QWidget):
         self.el_main_layout.addWidget(self.chat_head_wrapper)
         # self.collapse_ui()
 
-        self.new_chat('general')
-        self.active_chat_id = 'general'
         
         self.collapse_timer = QTimer()
         self.collapse_timer.setSingleShot(True)
         self.collapse_timer.setInterval(5000)
         self.collapse_timer.timeout.connect(self.check_and_collapse)
 
+        self.settings_window = SettingsWindow(assistant.uow)
 
-        self.collapse_ui()
+        self.settings_btn = QPushButton("⚙️")
+        self.settings_btn.setFixedSize(30, 30)
+        self.settings_btn.setStyleSheet("background: rgba(255, 255, 255, 0.5); border-radius: 15px;")
+        self.settings_btn.clicked.connect(self.toggle_settings)
+        
+        self.el_main_layout.addWidget(self.settings_btn)
+
+        added = self.new_chat('general')
+        if added is not None:
+            self.collapse_ui()
+
+    def toggle_settings(self):
+        if self.settings_window.isVisible():
+            self.hide_settings()
+        else:
+            self.show_settings()
+
+    def hide_settings(self):
+        self.settings_window.hide()
+    
+    def show_settings(self):
+        self.settings_window.show()
+        self.settings_window.raise_()
+        self.settings_window.activateWindow()
 
 
     def on_chat_head_clicked(self, head_id):
@@ -76,11 +101,14 @@ class DesktopAssistant(QWidget):
 
 
     def add_chat_box(self, id):
-        chat_box = ChatBox(id)
-        chat_box.text_entered.connect(self.process_chat)
-        self.el_main_layout.addWidget(chat_box)
-        return chat_box
-
+        try:
+            chat_box = ChatBox(id, self.assistant.create_session('generic', 'general'))
+            chat_box.text_entered.connect(self.process_chat)
+            self.el_main_layout.addWidget(chat_box)
+            return chat_box
+        except:
+            self.show_settings()
+            return None
 
     def add_chat_head(self, id):
         head = ChatHead("assets/icon.png", id=id)
@@ -150,20 +178,8 @@ class DesktopAssistant(QWidget):
 
 
     def process_chat(self, text):
-        messages = [] 
-        if text and text.strip() != "":
-            messages.append(text)
-            self.on_message_received('general', text, is_user=True)
-
-        # if self.context_text and self.context_text.strip() != "" :
-        #     messages.append(self.context_text)
-        #     self.on_message_received(self.context_text, is_user=True)
-
-        if len(messages) > 0:
-            self.worker = AskWorker(self.assistant, messages)
-            self.worker.finished.connect(self.handle_assistant_response)
-            self.worker.start()
-    
+        return
+   
     
     def handle_assistant_response(self, response):
         self.on_message_received('general', response, is_user=False)
