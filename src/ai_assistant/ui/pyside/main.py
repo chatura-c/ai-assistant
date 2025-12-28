@@ -24,6 +24,7 @@ class Chat:
         self.head = head
         self.box = box
 
+
 class DesktopAssistant(QWidget):
     context_signal = Signal(str)
 

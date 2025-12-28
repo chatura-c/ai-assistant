@@ -1,7 +1,7 @@
 from openai import OpenAI
-from .base import LLMProvider
+from ai_assistant.core.models import Provider
 
-class GenericProvider(LLMProvider):
+class GenericProvider(Provider):
     def __init__(self, base_url:str, api_key:str, model: str) -> None:
         self.model = model
         self.client = OpenAI(

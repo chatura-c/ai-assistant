@@ -15,7 +15,7 @@ class UI:
     def show(self):
         self.window.show()
 
-    def exit(self):
+    def run(self):
         sys.exit(self.app.exec())
 
     def on_context_changed(self, focus_frame):
