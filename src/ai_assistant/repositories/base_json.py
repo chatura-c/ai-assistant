@@ -1,12 +1,12 @@
 import os
 import json
-from typing import Optional, List, TypeVar, Generic, Type, Any
+from typing import Optional, TypeVar, Type
 from dataclasses import asdict
 from ai_assistant.core.repository import Repository
 
 T = TypeVar("T")
 
-class BaseJsonRepository(Repository[T], Generic[T]):
+class BaseJsonRepository(Repository[T]):
     def __init__(self, model_class: Type[T], data_path: str) -> None:
         self.model_class = model_class
         self.data_path = data_path
@@ -36,7 +36,7 @@ class BaseJsonRepository(Repository[T], Generic[T]):
     def get(self, id: str) -> Optional[T]:
         return self.data.get(id)
 
-    def get_all(self) -> List[T]:
+    def get_all(self) -> list[T]:
         return list(self.data.values())
 
     def create(self, id: str, entity: T) -> T:
@@ -48,3 +48,7 @@ class BaseJsonRepository(Repository[T], Generic[T]):
         if id in self.data:
             del self.data[id]
             self._save()
+    
+    def update(self, id:str, entity:T) -> None:
+        pass
+

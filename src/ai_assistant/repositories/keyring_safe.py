@@ -1,9 +1,9 @@
+from ai_assistant.core.models import SafeKey
 from ai_assistant.core.repository import Repository
-from ai_assistant.core.safekey import SafeKey
 import keyring
 from typing import Optional, List
 
-class SafeKeyRepository(Repository[SafeKey]):
+class KeyringSafeRepository(Repository[SafeKey]):
     def __init__(self, service_name: str):
         self.service_name = service_name
 
