@@ -71,10 +71,18 @@ class DesktopAssistant(QWidget):
         self.settings_btn.clicked.connect(self.toggle_settings)
         
         self.el_main_layout.addWidget(self.settings_btn)
-
-        added = self.new_chat('general')
-        if added is not None:
-            self.collapse_ui()
+        
+        assistants = self.assistant.uow.assistants.get_all()
+        try:
+            if len(assistants) > 0:
+                session_id = self.new_chat(assistants[0].profile_id, assistants[0].provider_id)
+                self.active_chat_id = session_id 
+                self.collapse_ui()
+            else:
+                self.show_settings()
+        except Exception as e:
+            print(e)
+            self.show_settings()
 
     def toggle_settings(self):
         if self.settings_window.isVisible():
@@ -96,19 +104,18 @@ class DesktopAssistant(QWidget):
         self.expand_ui()
 
 
-    def new_chat(self, id: str):
-        self.chats[id] = Chat(self.add_chat_head(id), self.add_chat_box(id))
+    def new_chat(self, profile_id: str, provider_id: str):
+        session_id = self.assistant.create_session(provider_id=provider_id, profile_id=profile_id)
+        self.chats[session_id] = Chat(self.add_chat_head(id), self.add_chat_box(id, self.assistant.get_assistant(session_id=session_id)))
+        return session_id
 
 
-    def add_chat_box(self, id):
-        try:
-            chat_box = ChatBox(id, self.assistant.create_session('generic', 'general'))
-            chat_box.text_entered.connect(self.process_chat)
-            self.el_main_layout.addWidget(chat_box)
-            return chat_box
-        except:
-            self.show_settings()
-            return None
+    def add_chat_box(self, id, assistant):
+        chat_box = ChatBox(id, assistant)
+        chat_box.text_entered.connect(self.process_chat)
+        self.el_main_layout.addWidget(chat_box)
+        return chat_box
+     
 
     def add_chat_head(self, id):
         head = ChatHead("assets/icon.png", id=id)

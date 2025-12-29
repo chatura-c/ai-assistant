@@ -1,14 +1,16 @@
 
 import subprocess
-from ai_assistant.adapters.base_adapter import BaseAdapter, ContextFrame
 import json
 from collections import deque
 
+from ai_assistant.core.adapter import BaseAdapter, ContextFrame
+from ai_assistant.core.host import Host
+
 class HyprlandAdapter(BaseAdapter):
-    def __init__(self, app_name: str, max_history=10) -> None:
+    def __init__(self, max_history=10) -> None:
         super().__init__()
-        self.app_name = app_name
-        self.ignore_classes = [app_name]
+        self.app_name = Host.APP_ID
+        self.ignore_classes = [self.app_name]
         
         self.stack: deque[ContextFrame] = deque(maxlen=max_history)
         self.stack.append(ContextFrame(None, None, False))

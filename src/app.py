@@ -2,10 +2,12 @@ import threading
 import time
 from typing import Optional
 
+from ai_assistant.core.host import Host
 from ai_assistant.repositories.json_uow import  JsonUnitOfWork
 from ai_assistant.core.manager import AssistantManager
 from ai_assistant.adapters.hyprland import HyprlandAdapter
 from ai_assistant.ui.pyside.ui import UI
+import ai_assistant.adapters
 
 APP_NAME = "ai-assistant3"
 IGNORE_LIST = ["python3", "ai-assistant", "ai-assistant3", "app.py"]
@@ -28,13 +30,13 @@ def start_watcher(adapter: HyprlandAdapter, ui_callback, stop_event: Optional[th
 def main():
     uow = JsonUnitOfWork()
     manager = AssistantManager(uow)
-    hyprland_adapter = HyprlandAdapter(APP_NAME)
+    adapter = ai_assistant.adapters.get_adapter(Host.get_desktop().value) 
     ui = UI(manager, APP_NAME)
 
     stop_event = threading.Event()
     watcher_thread = threading.Thread(
         target=start_watcher, 
-        args=(hyprland_adapter, ui.on_context_changed, stop_event), 
+        args=(adapter, ui.on_context_changed, stop_event), 
         daemon=True
     )
     watcher_thread.start()

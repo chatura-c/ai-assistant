@@ -4,18 +4,18 @@ from ai_assistant.core.assistant import AIAssistant
 from .uow import AbstractUnitOfWork
 
 class ProviderNotFoundError(Exception):
-    def __init__(self, **args: object) -> None:
-        super().__init__(*args)
+    def __init__(self, message='Provider not found.') -> None:
+        super().__init__(message)
 
 
 class ProfileNotFoundError(Exception):
-    def __init__(self, **args: object) -> None:
-        super().__init__(**args)
+    def __init__(self, message='Profile not found.' ) -> None:
+        super().__init__(message)
 
 
 class SecretNotFoundError(Exception):
-    def __init__(self, **args: object) -> None:
-        super().__init__(**args)
+    def __init__(self, message='Secret not found.') -> None:
+        super().__init__(message)
 
 class AssistantManager:
     def __init__(self, uow: AbstractUnitOfWork):
@@ -26,6 +26,9 @@ class AssistantManager:
     def create_session(self, provider_id: str, profile_id: str) -> str:
         provider_meta = self.uow.providers.get(provider_id)
         profile_meta = self.uow.profiles.get(profile_id)
+        
+        print(provider_meta)
+        print(profile_meta)
 
         if not provider_meta:
             raise ProviderNotFoundError(message=f"Provider '{provider_id}' was not found.")
@@ -33,7 +36,7 @@ class AssistantManager:
         if not profile_meta:
             raise ProfileNotFoundError(message=f"Profile '{profile_id}' was not found.")
 
-        secret = self.uow.secrets.get(provider_meta.api_key)
+        secret = self.uow.secrets.get(provider_meta.id)
         if not secret:
             raise SecretNotFoundError(message=f"API Key for {provider_id} is missing.")
 

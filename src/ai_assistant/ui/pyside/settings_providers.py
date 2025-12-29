@@ -95,7 +95,7 @@ class ProviderManager(QWidget):
             self.uow.providers.create(selected_provider.id, new_provider)
             
             if len(self.key_input.text()) > 0:
-                self.uow.secrets.update(selected_provider.id, SafeKey(selected_provider.id, self.key_input.text()))
+                self.uow.secrets.create(selected_provider.id, SafeKey(selected_provider.id, self.key_input.text()))
 
             self.load()
         QMessageBox.information(self, "Saved", "Provider configuration updated.")
