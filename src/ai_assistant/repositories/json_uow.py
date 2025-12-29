@@ -1,3 +1,4 @@
+from ai_assistant.core.host import Host
 from ai_assistant.core.models import AssistantConfig
 from ai_assistant.core.uow import AbstractUnitOfWork
 from ai_assistant.repositories.json_assistant_config import JsonAssistantConfigRepository
@@ -7,8 +8,8 @@ from ai_assistant.repositories.keyring_safe import KeyringSafeRepository
 
 class JsonUnitOfWork(AbstractUnitOfWork):
     def __init__(self):
-        self.profiles = JsonProfileRepository()
-        self.providers = JsonProviderRepository()
+        self.profiles = JsonProfileRepository(Host.get_config_dir()/'profiles.json')
+        self.providers = JsonProviderRepository(Host.get_config_dir()/'providers.json')
         self.secrets = KeyringSafeRepository("ai-assistant")
-        self.assistants = JsonAssistantConfigRepository()
+        self.assistants = JsonAssistantConfigRepository(Host.get_config_dir()/'assistants.json')
 
