@@ -1,13 +1,14 @@
 from ai_assistant.core.models import SafeKey
 from ai_assistant.core.repository import Repository
 import keyring
-from typing import Optional, List
+from typing import Optional
+
 
 class KeyringSafeRepository(Repository[SafeKey]):
     def __init__(self, service_name: str):
         self.service_name = service_name
 
-    def create(self, entity: SafeKey) -> SafeKey:
+    def create(self,id: str, entity: SafeKey) -> SafeKey:
         keyring.set_password(self.service_name, entity.key, entity.value)
         return entity
 
@@ -28,5 +29,5 @@ class KeyringSafeRepository(Repository[SafeKey]):
         except keyring.errors.PasswordDeleteError:
             pass
 
-    def get_all(self) -> List[SafeKey]:
+    def get_all(self) -> list[SafeKey]:
         raise NotImplementedError("Cannot list all keys.")

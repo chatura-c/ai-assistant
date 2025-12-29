@@ -49,6 +49,9 @@ class BaseJsonRepository(Repository[T]):
             del self.data[id]
             self._save()
     
-    def update(self, id:str, entity:T) -> None:
-        pass
-
+    def update(self, id: str, entity: T) -> None:
+        if id in self.data:
+            self.data[id] = entity
+            self._save()
+        else:
+            raise KeyError(f"Entity with id {id} not found.")

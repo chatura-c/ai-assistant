@@ -1,4 +1,5 @@
 import sys
+from uuid import uuid4
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
@@ -7,18 +8,22 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QMessageBox, QStackedWidget)
 from PySide6.QtCore import Qt
 
+from ai_assistant.core.models import Profile
+from ai_assistant.core.uow import AbstractUnitOfWork
 
 
 class ProfileManager(QWidget):
-    def __init__(self, uow):
+    def __init__(self, uow:AbstractUnitOfWork):
         super().__init__()
+        self.uow = uow
         self.profiles = []
         self.init_ui()
+
+        self.load()
 
     def init_ui(self):
         layout = QHBoxLayout(self)
         
-        # Left side: List and Add/Delete buttons
         list_container = QVBoxLayout()
         self.list_widget = QListWidget()
         self.list_widget.currentRowChanged.connect(self.load_profile)
@@ -36,7 +41,6 @@ class ProfileManager(QWidget):
         list_container.addWidget(self.list_widget)
         list_container.addLayout(btn_layout)
         
-        # Right side: Form
         self.form_widget = QWidget()
         form_layout = QFormLayout(self.form_widget)
         
@@ -56,10 +60,17 @@ class ProfileManager(QWidget):
 
     def add_new(self):
         name = f"New Profile {self.list_widget.count() + 1}"
-        new_p = Profile(name, "", "")
-        self.profiles.append(new_p)
-        self.list_widget.addItem(new_p.name)
+        new_profile = Profile(str(uuid4()), name, "", "")
+        self.uow.profiles.create(new_profile.id, new_profile)
+
+        self.profiles.append(new_profile)
+        self.list_widget.addItem(new_profile.name)
         self.list_widget.setCurrentRow(len(self.profiles) - 1)
+
+    def load(self):
+        self.profiles = self.uow.profiles.get_all()
+        self.list_widget.clear()
+        self.list_widget.addItems([p.name for p in self.profiles])
 
     def load_profile(self, index):
         if 0 <= index < len(self.profiles):
@@ -71,10 +82,15 @@ class ProfileManager(QWidget):
     def save_profile(self):
         idx = self.list_widget.currentRow()
         if idx >= 0:
-            self.profiles[idx].name = self.name_input.text()
-            self.profiles[idx].system_prompt = self.prompt_input.toPlainText()
-            self.profiles[idx].picture = self.pic_input.text()
-            self.list_widget.currentItem().setText(self.name_input.text())
+            current_profile = self.profiles[idx]
+            new_profile = Profile(
+                current_profile.id,
+                self.name_input.text(),
+                self.prompt_input.toPlainText(),
+                self.pic_input.text()
+            )
+            self.uow.profiles.update(current_profile.id, new_profile)
+            self.load()
             QMessageBox.information(self, "Success", "Profile Saved!")
 
     def delete_selected(self):

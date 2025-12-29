@@ -21,5 +21,5 @@ class Repository(ABC, Generic[T]):
         pass
     
     @abstractmethod
-    def create(self, entity: T) -> T: 
+    def create(self, id:str, entity: T) -> T: 
         pass

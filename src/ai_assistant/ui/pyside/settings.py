@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PySide6.QtCore import Qt
 
 from ai_assistant.ui.pyside.settings_app import AppSettings
+from ai_assistant.ui.pyside.settings_assistants import AssistantManager
 from ai_assistant.ui.pyside.settings_profiles import ProfileManager
 from ai_assistant.ui.pyside.settings_providers import ProviderManager
 
@@ -23,6 +24,7 @@ class SettingsWindow(QMainWindow):
         self.tabs = QTabWidget()
         self.tabs.addTab(ProfileManager(uow), "Profiles")
         self.tabs.addTab(ProviderManager(uow), "Providers")
+        self.tabs.addTab(AssistantManager(uow), "Assitants")
         self.tabs.addTab(AppSettings(uow), "Preferences")
 
         self.setCentralWidget(self.tabs)
