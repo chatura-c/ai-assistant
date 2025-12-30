@@ -3,13 +3,14 @@ from PySide6.QtWidgets import QApplication
 from ai_assistant.ui.pyside.main import DesktopAssistant
 
 class UI:
-    def __init__(self, assistant_manager, app_name):
+    def __init__(self, assistant_manager, adapter, app_name):
         app = QApplication(sys.argv)
         app.setDesktopFileName(app_name)
-        window = DesktopAssistant(assistant_manager)
+        window = DesktopAssistant(assistant_manager, adapter)
         
         self.assistant = assistant_manager
         self.window = window
+        self.adapter = adapter
         self.app = app
 
     def show(self):

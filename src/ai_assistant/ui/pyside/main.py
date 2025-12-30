@@ -1,8 +1,10 @@
+from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (QPushButton, QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QFrame)
-from PySide6.QtCore import QThread, Qt, QTimer, QPoint, Signal, Slot
+from PySide6.QtCore import QObject, QThread, Qt, QTimer, QPoint, Signal, Slot
 from ai_assistant.core.manager import AssistantManager
 from ai_assistant.ui.pyside.chat_head import ChatHead 
 from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
+from ai_assistant.ui.pyside.circle import CircleApp
 from ai_assistant.ui.pyside.context_bar import ContextBar
 from ai_assistant.ui.pyside.chat_box import ChatBox
 from ai_assistant.ui.pyside.settings import SettingsWindow
@@ -21,200 +23,98 @@ class AskWorker(QThread):
         self.finished.emit(response)
 
 
-class Chat:
-    def __init__(self, head, box) -> None:
-        self.head = head
-        self.box = box
-
-
-class DesktopAssistant(QWidget):
+class DesktopAssistant(QObject):
     context_signal = Signal(str)
 
-    chats = {}
+    chats:dict[str, QWidget] = {}
     
-    def __init__(self, assistant:AssistantManager):
+    def __init__(self, assistant:AssistantManager, adapter):
         super().__init__()
         self.assistant = assistant
+        self.adapter = adapter
         self.context_text = None
         self.is_expanded = False  
         self.auto_process = False
         self.active_chat_id = 'general'
 
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        
-        # self.setFixedSize(70, 70)
-        # self.setHeight(70)
-        self.setMaximumHeight(500)
-        self.context_signal.connect(self.add_context)
-        
+        self.head = ChatHead()
+        self.head.settings_clicked.connect(self.show_settings)
 
-        self.chat_head_wrapper = QFrame(self) 
-        self.el_floating_head_layout = QHBoxLayout(self.chat_head_wrapper)
-        self.el_floating_head_layout.addStretch()
-    
-        self.el_main_layout = QVBoxLayout(self)
-        self.el_main_layout.addWidget(self.chat_head_wrapper)
-        # self.collapse_ui()
+        self.box = ChatBox("123", None)
 
-        
-        self.collapse_timer = QTimer()
-        self.collapse_timer.setSingleShot(True)
-        self.collapse_timer.setInterval(5000)
-        self.collapse_timer.timeout.connect(self.check_and_collapse)
+        # self.head.on_message_received("Hello world", False, "123")
+        self.head.clicked.connect(self.on_chat_head_clicked)
 
-        self.settings_window = SettingsWindow(assistant.uow)
-
-        self.settings_btn = QPushButton("⚙️")
-        self.settings_btn.setFixedSize(30, 30)
-        self.settings_btn.setStyleSheet("background: rgba(255, 255, 255, 0.5); border-radius: 15px;")
-        self.settings_btn.clicked.connect(self.toggle_settings)
-        
-        self.el_main_layout.addWidget(self.settings_btn)
-        
+    def show(self):
         assistants = self.assistant.uow.assistants.get_all()
         try:
             if len(assistants) > 0:
                 session_id = self.new_chat(assistants[0].profile_id, assistants[0].provider_id)
-                self.active_chat_id = session_id 
-                self.collapse_ui()
+                profile = self.assistant.uow.profiles.get(assistants[0].profile_id)
+                self.head.add_new_chat(profile.picture if profile.picture.strip() != "" else "assets/icon.png", session_id)
+                self.head.show()
             else:
                 self.show_settings()
         except Exception as e:
             print(e)
             self.show_settings()
 
-    def toggle_settings(self):
-        if self.settings_window.isVisible():
-            self.hide_settings()
-        else:
-            self.show_settings()
 
-    def hide_settings(self):
-        self.settings_window.hide()
-    
     def show_settings(self):
-        self.settings_window.show()
-        self.settings_window.raise_()
-        self.settings_window.activateWindow()
+        print("Opening settings")
+        self.settings = SettingsWindow(self.assistant.uow)
+        self.settings.show()
 
 
-    def on_chat_head_clicked(self, head_id):
-        print("Clicked ", head_id)
-        self.expand_ui()
+    def on_chat_head_clicked(self, session_id):
+        for id, box in self.chats.items():
+            if session_id == id:
+                box.show()
+                self.move_window(box, self.get_pos(self.head))
+            else:
+                box.hide()
 
+        self.head.hide()
+
+    def move_window(self, window, pos):
+        print("moving to ",pos)
+        self.adapter.move_window(pos[0], pos[1])
+
+    def get_pos(self, window):
+        return self.adapter.get_mouse_pos()
+        
+        current_pos = window.pos()
+
+        # if current_pos == QPoint(0, 0):
+        current_pos = QCursor.pos()
+        print("mouse",current_pos)
+        
+        offset_x = self.head.width() // 2
+        offset_y = self.head.height() // 2
+        current_pos = QPoint(current_pos.x() - offset_x, current_pos.y() - offset_y)
+        
+        return current_pos
+
+        
+    def on_chat_box_dismissed(self, session_id):
+        chat_window = self.chats.get(session_id)
+        current_pos = self.get_pos(chat_window) 
+
+        chat_window.hide()
+        
+        self.head.show()
+        self.move_window(self.head, self.get_pos(self.head))
 
     def new_chat(self, profile_id: str, provider_id: str):
         session_id = self.assistant.create_session(provider_id=provider_id, profile_id=profile_id)
-        self.chats[session_id] = Chat(self.add_chat_head(id), self.add_chat_box(id, self.assistant.get_assistant(session_id=session_id)))
+        chat = ChatBox(session_id, self.assistant.get_assistant(session_id))
+        chat.dismissed.connect(self.on_chat_box_dismissed)
+        self.chats[session_id] = chat
+       
         return session_id
-
-
-    def add_chat_box(self, id, assistant):
-        chat_box = ChatBox(id, assistant)
-        chat_box.text_entered.connect(self.process_chat)
-        self.el_main_layout.addWidget(chat_box)
-        return chat_box
-     
-
-    def add_chat_head(self, id):
-        head = ChatHead("assets/icon.png", id=id)
-        head.clicked.connect(self.on_chat_head_clicked)
-        self.el_floating_head_layout.insertWidget(0, head, alignment=Qt.AlignCenter)
-        return head
-
-
-    def on_message_received(self, chat_id, text, is_user=False):
-        self.chats[chat_id].box.add_message(text, is_user)
-
-        if not self.is_expanded:
-            for i in reversed(range(self.el_floating_head_layout.count())):
-                widget = self.el_floating_head_layout.itemAt(i).widget()
-                if widget and widget.objectName() != "chat_head":
-                    widget.deleteLater()
-
-            new_bubble = ChatBubbleContainer(text, is_user=is_user, temporary=True)
-            self.el_floating_head_layout.addWidget(new_bubble, alignment=Qt.AlignCenter)
-    
-
-    def expand_ui(self):
-        if not self.is_expanded:
-            self.chat_head_wrapper.hide()
-            self.chats[self.active_chat_id].box.show()
-            self.is_expanded = True
-            self.updateGeometry()
-
-
-    def collapse_ui(self):
-        for c in self.chats.values():
-            c.box.hide()
-        self.chat_head_wrapper.show()
-        self.is_expanded = False
-        self.updateGeometry()
-    
-
-    def check_and_collapse(self):
-        print("Checking before collapsing ", self.hasFocus(), self.focusWidget())
-        if not self.hasFocus():
-            self.collapse_ui()
-        else:
-            self.collapse_timer.start()
-    
-
-    def enterEvent(self, event):
-        self.collapse_timer.stop()
-        super().enterEvent(event)
-
-
-    def leaveEvent(self, event):
-        self.collapse_timer.start()
-        super().leaveEvent(event)
-    
-
-    def clear_current_context(self):
-        self.context_bar.clear_context()
-
-
-    def show_full_context(self):
-        QMessageBox.information(self, "Full Context", self.context_bar.full_text)
-
-
-    def scroll_to_bottom(self):
-        bar = self.scroll.verticalScrollBar()
-        bar.setValue(bar.maximum())
-
-
-    def process_chat(self, text):
-        return
-   
-    
-    def handle_assistant_response(self, response):
-        self.on_message_received('general', response, is_user=False)
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
-
-
-    def mouseMoveEvent(self, event):
-        if event.buttons() == Qt.LeftButton:
-            self.move(event.globalPosition().toPoint() - self._drag_pos)
-    
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Escape:
-            self.collapse_ui()
-            self.collapse_timer.stop()
-        else:
-            super().keyPressEvent(event)
 
 
     @Slot(str)
     def add_context(self, text):
         self.context_text = text
         self.on_message_received('general', text)
-  
-        # self.context_bar.set_context(text)
-        # if self.auto_process:
-        #     self.process_chat()
-    

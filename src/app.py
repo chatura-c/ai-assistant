@@ -31,7 +31,7 @@ def main():
     uow = JsonUnitOfWork()
     manager = AssistantManager(uow)
     adapter = ai_assistant.adapters.get_adapter(Host.get_desktop().value) 
-    ui = UI(manager, APP_NAME)
+    ui = UI(manager, adapter, APP_NAME)
 
     stop_event = threading.Event()
     watcher_thread = threading.Thread(

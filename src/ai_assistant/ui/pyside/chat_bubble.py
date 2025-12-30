@@ -24,10 +24,9 @@ class MarkdownBubble(QTextBrowser):
 
 class ChatBubbleContainer(QWidget):
     """Wraps the bubble and a copy button into one layout."""
-    def __init__(self, text, is_user=False, temporary=False):
+    def __init__(self, text, is_user=False):
         super().__init__()
         self.text_content = text
-        self.temporary = temporary
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -49,10 +48,7 @@ class ChatBubbleContainer(QWidget):
         
         self.fade_anim = QPropertyAnimation(self.opacity_effect, b"opacity")
         self.slide_anim = QPropertyAnimation(self, b"pos")
-        
-        self.lifetime_timer = QTimer(self)
-        self.lifetime_timer.setSingleShot(True)
-        self.lifetime_timer.timeout.connect(self.animate_out)
+
 
         if is_user:
             layout.addWidget(self.copy_btn, alignment=Qt.AlignBottom)
@@ -108,5 +104,3 @@ class ChatBubbleContainer(QWidget):
     def showEvent(self, event):
         super().showEvent(event)
         self.animate_in(self.pos())
-        if self.temporary:
-            self.lifetime_timer.start(3000)

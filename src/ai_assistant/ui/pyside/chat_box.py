@@ -1,133 +1,148 @@
-from PySide6.QtWidgets import (QLabel, QLineEdit, QScrollArea, QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QFrame, QSizePolicy)
-from PySide6.QtCore import Qt, Signal, QThread
+from PySide6.QtWidgets import (QLabel, QLineEdit, QScrollArea, QWidget, 
+                             QVBoxLayout, QFrame, QSizePolicy)
+from PySide6.QtCore import Qt, Signal, QThread, QTimer
 
-from ai_assistant.core.assistant import AIAssistant
 from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
 
+class LoadingIndicator(QFrame):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(15, 8, 15, 8)
+        
+        self.label = QLabel("thinking...")
+        self.label.setStyleSheet("color: #777; font-style: italic; font-size: 11px;")
+        layout.addWidget(self.label)
+        
+        self.setStyleSheet("""
+            QFrame {
+                background: #f0f0f0;
+                border-radius: 12px;
+                border: 1px solid #e0e0e0;
+            }
+        """)
+        self.setFixedWidth(150)
+        self.hide()
 
 class AskWorker(QThread):
     finished = Signal(str)
 
-    def __init__(self, provider, messages):
+    def __init__(self, provider_func, messages):
         super().__init__()
-        self.provider = provider
+        self.provider_func = provider_func
         self.messages = messages
 
     def run(self):
-        response = self.provider.ask(self.messages)
+        response = self.provider_func(self.messages)
         self.finished.emit(response)
 
-
 class ChatBox(QWidget):
-    text_entered = Signal(str)
+    dismissed = Signal(str)
 
-    def __init__(self, id, assistant:AIAssistant):
+    def __init__(self, session_id, assistant):
         super().__init__()
-        # self.context_callbacks = context_callbacks or {}
-            
-        self.id = id
+        self.session_id = session_id
         self.assistant = assistant 
+        
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setFixedWidth(320)
+        self.setMinimumHeight(400)
+
         self.init_ui()
 
     def init_ui(self):
-        self.main_container_layout = QVBoxLayout(self)
-        self.main_container_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_container_layout.setSpacing(0)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.main_layout.setSpacing(10)
 
-        self.chat_wrapper = QFrame()
-        self.chat_wrapper_layout = QVBoxLayout(self.chat_wrapper)
-        self.chat_wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        self.chat_wrapper_layout.setSpacing(10)
-
+        # Scroll Area
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
-        self.scroll.setMinimumHeight(300)
-        self.scroll.setMaximumHeight(800)
         self.scroll.setStyleSheet("background: transparent; border: none;")
-        self.scroll.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.container = QWidget()
         self.container.setAttribute(Qt.WA_TranslucentBackground)
         self.chat_layout = QVBoxLayout(self.container)
-        self.chat_layout.setContentsMargins(10, 5, 10, 5)
-        self.chat_layout.setSpacing(15)
+        self.chat_layout.setContentsMargins(5, 5, 5, 5)
+        self.chat_layout.setSpacing(10)
+        
         self.chat_layout.addStretch() 
         
+        self.typing_indicator = LoadingIndicator()
+        self.chat_layout.addWidget(self.typing_indicator)
+        
         self.scroll.setWidget(self.container)
-        self.chat_wrapper_layout.addWidget(self.scroll)
+        self.main_layout.addWidget(self.scroll)
 
-        # try:
-        #     from ai_assistant.ui.pyside.context_bar import ContextBar
-        #     clear_cb = self.context_callbacks.get('clear')
-        #     show_cb = self.context_callbacks.get('show')
-        #
-        #     self.context_bar = ContextBar(on_remove_callback=clear_cb)
-        #
-        #     if clear_cb:
-        #         try: self.context_bar.remove_btn.clicked.connect(clear_cb)
-        #         except AttributeError: pass
-        #     if show_cb:
-        #         try: self.context_bar.view_btn.clicked.connect(show_cb)
-        #         except AttributeError: pass
-        #
-        #     self.chat_wrapper_layout.addWidget(self.context_bar)
-        # except ImportError:
-        #     pass
-        #
         self.input_field = QLineEdit()
-        self.input_field.setPlaceholderText("Message...")
-        self.input_field.setFixedWidth(260)
+        self.input_field.setPlaceholderText("Ask me anything...")
         self.input_field.setStyleSheet("""
             QLineEdit {
-                border-radius: 15px; 
-                padding: 10px; 
+                border-radius: 18px; 
+                padding: 10px 15px; 
                 background: white; 
-                border: 1px solid #888;
-                color: #333;
+                border: 1px solid #dcdcdc;
+                color: #222;
+                font-size: 13px;
             }
         """)
-        
         self.input_field.returnPressed.connect(self.on_text_entered)
-        
-        self.main_container_layout.addWidget(self.chat_wrapper)
-        self.main_container_layout.addWidget(self.input_field, alignment=Qt.AlignCenter)
-    
-
-    def process_chat(self, text):
-        messages = [] 
-        if text and text.strip() != "":
-            messages.append(text)
-            self.add_message(text, is_user=True)
-
-        if len(messages) > 0:
-            self.worker = AskWorker(self.assistant.ask, messages)
-            self.worker.finished.connect(self.handle_assistant_response)
-            self.worker.start()
- 
-    
-    def handle_assistant_response(self, response):
-        self.add_message(response, is_user=False)
-
+        self.main_layout.addWidget(self.input_field)
 
     def on_text_entered(self):
-        text = self.input_field.text()
-        # self.text_entered.emit(text)
-        self.add_message(text)
-        self.process_chat(text)
+        text = self.input_field.text().strip()
+        if not text:
+            return
+            
         self.input_field.clear()
+        self.input_field.setEnabled(False)
+        
+        self.add_message(text, is_user=True)
+        self.show_typing(True)
+        self.process_chat(text)
 
+    def process_chat(self, text):
+        self.worker = AskWorker(self.assistant.ask, [text])
+        self.worker.finished.connect(self.handle_assistant_response)
+        self.worker.start()
+
+    def handle_assistant_response(self, response):
+        self.show_typing(False)
+        self.add_message(response, is_user=False)
+        self.input_field.setEnabled(True)
+        self.input_field.setFocus()
+
+    def show_typing(self, visible: bool):
+        if visible:
+            self.typing_indicator.show()
+        else:
+            self.typing_indicator.hide()
+        self.scroll_to_bottom()
 
     def add_message(self, text, is_user=True):
-        msg = ChatBubbleContainer(text, is_user)
-
-        self.chat_layout.insertWidget(self.chat_layout.count() - 1, msg)
+        from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
         
-        self.scroll.verticalScrollBar().setValue(
-            self.scroll.verticalScrollBar().maximum()
-        )
+        msg = ChatBubbleContainer(text, is_user)
+        
+        idx = self.chat_layout.count() - 2
+        self.chat_layout.insertWidget(max(0, idx), msg)
+        
+        QTimer.singleShot(50, self.scroll_to_bottom)
 
-    def get_text(self):
-        return self.input_field.text()
+    def scroll_to_bottom(self):
+        bar = self.scroll.verticalScrollBar()
+        bar.setValue(bar.maximum())
 
-    def clear_input(self):
-        self.input_field.clear()
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.dismissed.emit(self.session_id)
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+
+
+    def moveEvent(self, event):
+        print(f"ChatHead moved to: {event.pos().x()}, {event.pos().y()}")
+        super().moveEvent(event)
