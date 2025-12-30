@@ -24,3 +24,7 @@ class BaseAdapter(ABC):
     def copy_text_into_clipboard(self, text):
         pass
 
+    @abstractmethod
+    def move_window(self, x, y):
+        pass
+

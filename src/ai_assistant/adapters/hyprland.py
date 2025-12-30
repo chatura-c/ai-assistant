@@ -83,3 +83,13 @@ class HyprlandAdapter(BaseAdapter):
 
     def copy_text_into_clipboard(self, text):
         subprocess.run(["wl-copy"], input=text)
+
+    def move_window(self, x, y):
+        x, y = int(x), int(y)
+        cmd = [
+            "hyprctl", "dispatch", 
+            "movewindowpixel", 
+            f"exact {x} {y},class:^{self.app_name}$"
+        ]
+        
+        subprocess.Popen(cmd)
