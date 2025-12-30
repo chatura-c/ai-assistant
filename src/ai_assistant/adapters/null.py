@@ -12,3 +12,6 @@ class NullAdapter(BaseAdapter):
     
     def copy_text_into_clipboard(self, text):
         pass
+
+    def move_window(self, x, y):
+        pass

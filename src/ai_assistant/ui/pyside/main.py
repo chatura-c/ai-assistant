@@ -2,12 +2,11 @@ from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (QPushButton, QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QFrame)
 from PySide6.QtCore import QObject, QThread, Qt, QTimer, QPoint, Signal, Slot
 from ai_assistant.core.manager import AssistantManager
-from ai_assistant.ui.pyside.chat_head import ChatHead 
-from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
-from ai_assistant.ui.pyside.circle import CircleApp
-from ai_assistant.ui.pyside.context_bar import ContextBar
-from ai_assistant.ui.pyside.chat_box import ChatBox
-from ai_assistant.ui.pyside.settings import SettingsWindow
+from ai_assistant.ui.pyside.chat.chat_head import ChatHead 
+from ai_assistant.ui.pyside.chat.chat_bubble import ChatBubbleContainer
+# from ai_assistant.ui.pyside.chat.context_bar import ContextBar
+from ai_assistant.ui.pyside.chat.chat_box import ChatBox
+from ai_assistant.ui.pyside.settings.settings import SettingsWindow
 
 
 class AskWorker(QThread):

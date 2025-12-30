@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (QLabel, QLineEdit, QScrollArea, QWidget,
                              QVBoxLayout, QFrame, QSizePolicy)
 from PySide6.QtCore import Qt, Signal, QThread, QTimer
 
-from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
+from ai_assistant.ui.pyside.chat.chat_bubble import ChatBubbleContainer
 
 class LoadingIndicator(QFrame):
     def __init__(self):

@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QApplication, QWidget, QHBoxLayout, QLabel,
 from PySide6.QtCore import Qt, Signal, QTimer, QPoint, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QPixmap, QAction, QColor, QPainter
 
-from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
+from ai_assistant.ui.pyside.chat.chat_bubble import ChatBubbleContainer
 
 class ChatHead(QWidget):
     clicked = Signal(str)

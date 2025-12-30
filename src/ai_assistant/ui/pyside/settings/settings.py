@@ -7,10 +7,10 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QMessageBox, QStackedWidget)
 from PySide6.QtCore import Qt
 
-from ai_assistant.ui.pyside.settings_app import AppSettings
-from ai_assistant.ui.pyside.settings_assistants import AssistantManager
-from ai_assistant.ui.pyside.settings_profiles import ProfileManager
-from ai_assistant.ui.pyside.settings_providers import ProviderManager
+from ai_assistant.ui.pyside.settings.settings_app import AppSettings
+from ai_assistant.ui.pyside.settings.settings_assistants import AssistantManager
+from ai_assistant.ui.pyside.settings.settings_profiles import ProfileManager
+from ai_assistant.ui.pyside.settings.settings_providers import ProviderManager
 
 
 
