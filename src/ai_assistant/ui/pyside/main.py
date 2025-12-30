@@ -27,10 +27,10 @@ class DesktopAssistant(QObject):
 
     chats:dict[str, QWidget] = {}
     
-    def __init__(self, assistant:AssistantManager, adapter):
+    def __init__(self, assistant:AssistantManager, mover):
         super().__init__()
         self.assistant = assistant
-        self.adapter = adapter
+        self.window_mover = mover
         self.context_text = None
         self.is_expanded = False  
         self.auto_process = False
@@ -77,23 +77,10 @@ class DesktopAssistant(QObject):
 
     def move_window(self, window, pos):
         print("moving to ",pos)
-        self.adapter.move_window(pos[0], pos[1])
+        self.window_mover.move_window(window, pos[0], pos[1])
 
     def get_pos(self, window):
-        return self.adapter.get_mouse_pos()
-        
-        current_pos = window.pos()
-
-        # if current_pos == QPoint(0, 0):
-        current_pos = QCursor.pos()
-        print("mouse",current_pos)
-        
-        offset_x = self.head.width() // 2
-        offset_y = self.head.height() // 2
-        current_pos = QPoint(current_pos.x() - offset_x, current_pos.y() - offset_y)
-        
-        return current_pos
-
+        return self.window_mover.get_window_position(window)
         
     def on_chat_box_dismissed(self, session_id):
         chat_window = self.chats.get(session_id)

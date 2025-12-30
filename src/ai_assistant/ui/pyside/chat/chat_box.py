@@ -122,7 +122,6 @@ class ChatBox(QWidget):
         self.scroll_to_bottom()
 
     def add_message(self, text, is_user=True):
-        from ai_assistant.ui.pyside.chat_bubble import ChatBubbleContainer
         
         msg = ChatBubbleContainer(text, is_user)
         

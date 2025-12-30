@@ -93,4 +93,3 @@ class HyprlandAdapter(BaseAdapter):
         ]
         
         subprocess.Popen(cmd)
-        print("MVIED")
