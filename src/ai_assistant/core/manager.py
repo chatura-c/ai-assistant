@@ -1,6 +1,7 @@
 import copy
 from typing import Dict, Optional
 from ai_assistant.core.assistant import AIAssistant
+from ai_assistant.providers.generic import GenericProvider
 from .uow import AbstractUnitOfWork
 
 class ProviderNotFoundError(Exception):
@@ -40,8 +41,7 @@ class AssistantManager:
         if not secret:
             raise SecretNotFoundError(message=f"API Key for {provider_id} is missing.")
 
-        runtime_provider = copy.deepcopy(provider_meta)
-        runtime_provider.api_key = secret.value
+        runtime_provider = GenericProvider(provider_meta.url, secret.value, provider_meta.model)
 
         assistant = AIAssistant(provider=runtime_provider, profile=profile_meta)
         

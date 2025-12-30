@@ -20,6 +20,7 @@ class AIAssistant:
             self.messages.insert(0, message)
 
     def ask(self, query: Union[str, list[str], list[dict[str, str]]]) -> str:
+        print("Asking")
         new_messages = []
         
         if isinstance(query, str):
