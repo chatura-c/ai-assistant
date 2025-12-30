@@ -49,6 +49,9 @@ class ChatBox(QWidget):
         self.setFixedWidth(320)
         self.setMinimumHeight(400)
 
+        self.idle_timer = QTimer(singleShot=True)
+        self.idle_timer.timeout.connect(lambda: self.dismissed.emit(session_id))
+
         self.init_ui()
 
     def init_ui(self):
@@ -140,6 +143,14 @@ class ChatBox(QWidget):
             event.accept()
         else:
             super().keyPressEvent(event)
+
+
+    def leaveEvent(self, event) -> None:
+        self.idle_timer.start(4000)
+
+
+    def enterEvent(self, event) -> None:
+        self.idle_timer.stop()
 
 
     def moveEvent(self, event):

@@ -25,7 +25,7 @@ class SettingsWindow(QMainWindow):
         self.tabs.addTab(ProfileManager(uow), "Profiles")
         self.tabs.addTab(ProviderManager(uow), "Providers")
         self.tabs.addTab(AssistantManager(uow), "Assitants")
-        self.tabs.addTab(AppSettings(uow), "Preferences")
+        # self.tabs.addTab(AppSettings(uow), "Preferences")
 
         self.setCentralWidget(self.tabs)
 
