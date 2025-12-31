@@ -40,10 +40,11 @@ class DesktopAssistant(QObject):
         self.head = ChatHead()
         self.head.settings_clicked.connect(self.show_settings)
 
-        self.box = ChatBox("123", None)
+        self.box = ChatBox("temp", None)
 
         # self.head.on_message_received("Hello world", False, "123")
         self.head.clicked.connect(self.on_chat_head_clicked)
+        self.context_signal.connect(self.add_context)
 
     def show(self):
         assistants = self.assistant.uow.assistants.get_all()
@@ -115,6 +116,8 @@ class DesktopAssistant(QObject):
         chat = ChatBox(session_id, self.assistant.get_assistant(session_id))
         chat.dismissed.connect(self.on_chat_box_dismissed)
         chat.dock_clicked.connect(self.on_chat_box_docked)
+        chat.show()
+        chat.pinned = True
         self.chats[session_id] = chat
        
         return session_id
@@ -122,5 +125,7 @@ class DesktopAssistant(QObject):
 
     @Slot(str)
     def add_context(self, text):
-        self.context_text = text
-        self.on_message_received('general', text)
+        # self.context_text = text
+        print("REceie", text)
+        for box in self.chats.values():
+            box.on_context_text_received(text)

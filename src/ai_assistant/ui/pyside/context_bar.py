@@ -1,15 +1,19 @@
 
+from PySide6.QtCore import Signal
+from PySide6.QtGui import Qt
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QPushButton, QLabel)
 
 from ai_assistant.ui.pyside.styles import context_bar_style, context_btn_style
 
 class ContextBar(QWidget):
-    def __init__(self, on_remove_callback):
+    context_dismissed = Signal(str)
+    context_clicked = Signal(str)
+
+    def __init__(self, text:str):
         super().__init__()
         self.setObjectName("ContextBar")
         self.setStyleSheet(context_bar_style)
-        self.full_text = ""
-        self.on_remove = on_remove_callback
+        self.full_text = text
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 2, 10, 2)
@@ -19,38 +23,32 @@ class ContextBar(QWidget):
         self.label.setObjectName("ContextLabel")
         self.label.setWordWrap(True)
         self.label.setMaximumHeight(35) # Limits to roughly 2 lines
+        self.label.setText(text)
         layout.addWidget(self.label, stretch=1)
 
         # Buttons Container (Hidden by default)
         self.btn_container = QWidget()
         btn_layout = QHBoxLayout(self.btn_container)
         btn_layout.setContentsMargins(0, 0, 0, 0)
+        self.btn_container.show()
         
-        self.view_btn = QPushButton("View Full")
         self.remove_btn = QPushButton("✕")
-        
-        for btn in [self.view_btn, self.remove_btn]:
-            btn.setStyleSheet(context_btn_style)
-            btn_layout.addWidget(btn)
+        self.remove_btn.setStyleSheet(context_btn_style)
+        self.remove_btn.clicked.connect(self.on_context_text_dismissed)
+        btn_layout.addWidget(self.remove_btn)
 
         layout.addWidget(self.btn_container)
-        self.btn_container.hide()
-        self.hide() # Start hidden
 
-    def set_context(self, text):
-        self.full_text = text
-        self.label.setText(f"Context: {text}")
-        self.show()
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.context_clicked.emit(self.full_text)
 
-    def clear_context(self):
-        self.full_text = ""
-        self.hide()
+    def on_context_text_dismissed(self):
+        self.context_dismissed.emit(self.full_text)
 
     def enterEvent(self, event):
-        self.btn_container.show()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        self.btn_container.hide()
         super().leaveEvent(event)
 
