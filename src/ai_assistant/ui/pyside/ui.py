@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import sys
+from time import sleep
 from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QApplication
 from ai_assistant.core.host import Host

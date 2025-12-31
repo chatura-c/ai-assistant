@@ -9,7 +9,6 @@ from ai_assistant.adapters.hyprland import HyprlandAdapter
 from ai_assistant.ui.pyside.ui import UI
 import ai_assistant.adapters
 
-APP_NAME = "ai-assistant3"
 IGNORE_LIST = ["python3", "ai-assistant", "ai-assistant3", "app.py"]
 
 def start_watcher(adapter: HyprlandAdapter, ui_callback, stop_event: Optional[threading.Event] = None):
@@ -31,7 +30,7 @@ def main():
     uow = JsonUnitOfWork()
     manager = AssistantManager(uow)
     adapter = ai_assistant.adapters.get_adapter(Host.get_desktop().value) 
-    ui = UI(manager, adapter, APP_NAME)
+    ui = UI(manager, adapter, Host.APP_ID)
 
     stop_event = threading.Event()
     watcher_thread = threading.Thread(

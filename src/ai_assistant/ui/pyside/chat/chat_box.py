@@ -1,32 +1,19 @@
-from PySide6.QtWidgets import (QLabel, QLineEdit, QScrollArea, QWidget, 
-                             QVBoxLayout, QFrame, QSizePolicy)
-from PySide6.QtCore import Qt, Signal, QThread, QTimer
+from abc import abstractmethod
+from PySide6.QtWidgets import (QLabel, QLineEdit, QPushButton, QScrollArea, QWidget, 
+                             QVBoxLayout, QHBoxLayout, QFrame, QSizePolicy, 
+                             QGraphicsDropShadowEffect, QTextBrowser)
+from PySide6.QtCore import Qt, Signal, QThread, QTimer, QPropertyAnimation, QEasingCurve
+from PySide6.QtGui import QColor, QFont
 
+# Assuming these imports exist in your project
 from ai_assistant.ui.pyside.chat.chat_bubble import ChatBubbleContainer
-
-class LoadingIndicator(QFrame):
-    def __init__(self):
-        super().__init__()
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(15, 8, 15, 8)
-        
-        self.label = QLabel("thinking...")
-        self.label.setStyleSheet("color: #777; font-style: italic; font-size: 11px;")
-        layout.addWidget(self.label)
-        
-        self.setStyleSheet("""
-            QFrame {
-                background: #f0f0f0;
-                border-radius: 12px;
-                border: 1px solid #e0e0e0;
-            }
-        """)
-        self.setFixedWidth(150)
-        self.hide()
+from ai_assistant.ui.pyside.styles import scrollbar_style
+from ai_assistant.ui.pyside.icons import dock_icon, pin_icon
+# UI Constants for easy tweaking
+OPACITY = 0.65 
 
 class AskWorker(QThread):
     finished = Signal(str)
-
     def __init__(self, provider_func, messages):
         super().__init__()
         self.provider_func = provider_func
@@ -34,10 +21,50 @@ class AskWorker(QThread):
 
     def run(self):
         response = self.provider_func(self.messages)
-        self.finished.emit(response)
+        self.finished.emit(response) 
+
+class LoadingIndicator(QFrame):
+    def __init__(self):
+        super().__init__()
+        self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(15, 10, 15, 10)
+        self.layout.setSpacing(4)
+        
+        self.label = QLabel("Thinking")
+        self.label.setStyleSheet("color: white; font-weight: 500; font-size: 12px; font-family: 'Segoe UI', sans-serif; background: transparent;")
+        self.layout.addWidget(self.label)
+        
+        self.dots = QLabel("...")
+        self.dots.setStyleSheet("color: #33ccff; font-weight: bold; font-size: 14px; background: transparent;")
+        self.layout.addWidget(self.dots)
+        self.layout.addStretch()
+        
+        self.setStyleSheet(f"""
+            QFrame {{
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 15px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+        """)
+        self.setFixedWidth(110)
+        self.hide()
+        
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self._animate)
+        self.timer.start(500)
+        self.dot_count = 0
+
+    def _animate(self):
+        self.dot_count = (self.dot_count + 1) % 4
+        self.dots.setText("." * self.dot_count)
 
 class ChatBox(QWidget):
     dismissed = Signal(str)
+    dock_clicked = Signal(str)
+
+    pinned = False
+    docked = False
+    docked_at = 0,0
 
     def __init__(self, session_id, assistant):
         super().__init__()
@@ -46,8 +73,8 @@ class ChatBox(QWidget):
         
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setFixedWidth(320)
-        self.setMinimumHeight(400)
+        self.setFixedWidth(350)
+        self.setMinimumHeight(500)
 
         self.idle_timer = QTimer(singleShot=True)
         self.idle_timer.timeout.connect(lambda: self.dismissed.emit(session_id))
@@ -55,44 +82,94 @@ class ChatBox(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        self.content_widget = QWidget()
+        self.content_widget.setObjectName("MainContent")
+        
+        self.content_widget.setStyleSheet(f"""
+            QWidget#MainContent {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+                                            stop:0 rgba(51, 204, 255, {OPACITY}), 
+                                            stop:1 rgba(238, 130, 238, {OPACITY}));
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.15);
+            }}
+        """)
+        
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(30)
+        shadow.setXOffset(0)
+        shadow.setYOffset(10)
+        shadow.setColor(QColor(0, 0, 0, 80))
+        self.content_widget.setGraphicsEffect(shadow)
+
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(10, 10, 10, 10)
-        self.main_layout.setSpacing(10)
+        self.main_layout.addWidget(self.content_widget)
 
-        # Scroll Area
+        self.inner_layout = QVBoxLayout(self.content_widget)
+        self.inner_layout.setContentsMargins(12, 12, 12, 12)
+        self.inner_layout.setSpacing(10)
+        
+        self.header_layout = QHBoxLayout()
+
+        header = QLabel("AI Assistant")
+        header.setStyleSheet("color: white; font-weight: bold; font-size: 15px; padding: 5px; font-family: 'Segoe UI'; background: transparent;")
+        self.header_layout.addWidget(header)
+
+        self.pin_btn = QPushButton()
+        self.pin_btn.setIcon(pin_icon())
+        self.pin_btn.setFlat(True)
+        self.pin_btn.clicked.connect(self.on_pin_clicked)
+        self.header_layout.addWidget(self.pin_btn) 
+    
+
+        self.dock_btn = QPushButton()
+        self.dock_btn.setIcon(dock_icon())
+        self.dock_btn.setFlat(True)
+        self.dock_btn.clicked.connect(self.on_dock_clicked)
+        self.header_layout.addWidget(self.dock_btn)
+
+        self.inner_layout.addLayout(self.header_layout)
+
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.scroll.setStyleSheet("background: transparent; border: none;")
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.verticalScrollBar().setStyleSheet(scrollbar_style)
 
         self.container = QWidget()
         self.container.setAttribute(Qt.WA_TranslucentBackground)
         self.chat_layout = QVBoxLayout(self.container)
-        self.chat_layout.setContentsMargins(5, 5, 5, 5)
-        self.chat_layout.setSpacing(10)
-        
-        self.chat_layout.addStretch() 
+        self.chat_layout.setContentsMargins(2, 5, 2, 5)
+        self.chat_layout.setSpacing(15)
         
         self.typing_indicator = LoadingIndicator()
         self.chat_layout.addWidget(self.typing_indicator)
+        self.chat_layout.addStretch() 
         
         self.scroll.setWidget(self.container)
-        self.main_layout.addWidget(self.scroll)
+        self.inner_layout.addWidget(self.scroll)
 
         self.input_field = QLineEdit()
-        self.input_field.setPlaceholderText("Ask me anything...")
-        self.input_field.setStyleSheet("""
-            QLineEdit {
-                border-radius: 18px; 
+        self.input_field.setPlaceholderText("Type a message...")
+        self.input_field.setStyleSheet(f"""
+            QLineEdit {{
+                border-radius: 10px; 
                 padding: 10px 15px; 
-                background: white; 
-                border: 1px solid #dcdcdc;
-                color: #222;
+                background: rgba(0, 0, 0, {min(0.4, OPACITY - 0.25)}); 
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                color: white;
                 font-size: 13px;
-            }
+                font-family: 'Segoe UI';
+            }}
+            QLineEdit:focus {{
+                border: 1px solid rgba(51, 204, 255, 0.6);
+                background: rgba(0, 0, 0, 0.5);
+            }}
         """)
         self.input_field.returnPressed.connect(self.on_text_entered)
-        self.main_layout.addWidget(self.input_field)
+        self.inner_layout.addWidget(self.input_field)
+        self.input_field.setFocus()
 
     def on_text_entered(self):
         text = self.input_field.text().strip()
@@ -125,13 +202,23 @@ class ChatBox(QWidget):
         self.scroll_to_bottom()
 
     def add_message(self, text, is_user=True):
-        
         msg = ChatBubbleContainer(text, is_user)
+        idx = self.chat_layout.indexOf(self.typing_indicator)
+        if idx == -1:
+            idx = self.chat_layout.count() - 1
+            
+        self.chat_layout.insertWidget(idx, msg)
+        msg.show()
         
-        idx = self.chat_layout.count() - 2
-        self.chat_layout.insertWidget(max(0, idx), msg)
-        
-        QTimer.singleShot(50, self.scroll_to_bottom)
+        # QTimer.singleShot(10, lambda: self._refresh_layout(msg))
+        # QTimer.singleShot(50, self.scroll_to_bottom)
+
+    def _refresh_layout(self, msg_widget):
+        """Forces the layout to recalculate and bubbles to adjust their internal height."""
+        if hasattr(msg_widget, 'bubble'):
+            msg_widget.bubble.adjust_height()
+        self.container.updateGeometry()
+        self.container.layout().activate()
 
     def scroll_to_bottom(self):
         bar = self.scroll.verticalScrollBar()
@@ -144,15 +231,27 @@ class ChatBox(QWidget):
         else:
             super().keyPressEvent(event)
 
-
     def leaveEvent(self, event) -> None:
-        self.idle_timer.start(4000)
-
+        self.idle_timer.start(8000)
 
     def enterEvent(self, event) -> None:
         self.idle_timer.stop()
 
+    def set_docked_at(self, pos):
+        self.docked_at = pos
+        print("Setting anchor", pos)
 
-    def moveEvent(self, event):
-        print(f"ChatHead moved to: {event.pos().x()}, {event.pos().y()}")
-        super().moveEvent(event)
+    def on_dock_clicked(self):
+        self.docked = not self.docked
+        if self.docked:
+            self.dock_btn.setIcon(dock_icon("white"))
+        else:
+            self.dock_btn.setIcon(dock_icon("grey"))
+        self.dock_clicked.emit(self.session_id)
+
+    def on_pin_clicked(self):
+        self.pinned = not self.pinned
+        if self.pinned:
+            self.pin_btn.setIcon(pin_icon("white"))
+        else:
+            self.pin_btn.setIcon(pin_icon("grey"))

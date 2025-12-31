@@ -1,13 +1,6 @@
-import sys
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QListWidget, QLineEdit, QTextEdit, 
-                             QPushButton, QLabel, QTabWidget, QFormLayout, 
-                             QMessageBox, QStackedWidget)
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QMainWindow,  QTabWidget)
 
-from ai_assistant.ui.pyside.settings.settings_app import AppSettings
+# from ai_assistant.ui.pyside.settings.settings_app import AppSettings
 from ai_assistant.ui.pyside.settings.settings_assistants import AssistantManager
 from ai_assistant.ui.pyside.settings.settings_profiles import ProfileManager
 from ai_assistant.ui.pyside.settings.settings_providers import ProviderManager

@@ -15,20 +15,34 @@ user_style = bubble_base_style % ("#E1F5FE", "#03A9F4", "#333")
 scrollbar_style = """
 QScrollBar:vertical {
     border: none;
-    background: transparent;
-    width: 6px;
-    margin: 0px;
+    background: #2b2b2b;    /* Background of the scrollbar track */
+    width: 10px;            /* Narrower for a sleek look */
+    margin: 0px 0px 0px 0px;
+    border-radius: 5px;
 }
+
+/* The actual handle that moves */
 QScrollBar::handle:vertical {
-    background: rgba(100, 100, 100, 80);
-    min-height: 20px;
-    border-radius: 3px;
+    background: #5c5c5c;    /* Subtle grey */
+    min-height: 30px;
+    border-radius: 5px;
 }
+
+/* Handle color on hover */
 QScrollBar::handle:vertical:hover {
-    background: rgba(100, 100, 100, 150);
+    background: #888888;
 }
+
+/* Hide the top and bottom arrows */
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
     height: 0px;
+}
+
+/* Removes the background area above and below the handle */
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
 }
 """
 copy_button_style = """

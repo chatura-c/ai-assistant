@@ -2,6 +2,7 @@ from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (QPushButton, QWidget, QMessageBox, QVBoxLayout, QHBoxLayout, QFrame)
 from PySide6.QtCore import QObject, QThread, Qt, QTimer, QPoint, Signal, Slot
 from ai_assistant.core.manager import AssistantManager
+from ai_assistant.ui.pyside.chat import chat_box
 from ai_assistant.ui.pyside.chat.chat_head import ChatHead 
 from ai_assistant.ui.pyside.chat.chat_bubble import ChatBubbleContainer
 # from ai_assistant.ui.pyside.chat.context_bar import ContextBar
@@ -66,14 +67,22 @@ class DesktopAssistant(QObject):
 
 
     def on_chat_head_clicked(self, session_id):
+        move_pos = self.get_pos(self.head)
+        target_box = None
+
         for id, box in self.chats.items():
             if session_id == id:
                 box.show()
-                self.move_window(box, self.get_pos(self.head))
+                target_box = box
+                if box.docked:
+                    mov_pos = box.docked_at
             else:
                 box.hide()
 
         self.head.hide()
+        # QTimer.singleShot(100, lambda: self.move_window(target_box, move_pos))
+
+        self.move_window(target_box, move_pos)
 
     def move_window(self, window, pos):
         print("moving to ",pos)
@@ -84,17 +93,28 @@ class DesktopAssistant(QObject):
         
     def on_chat_box_dismissed(self, session_id):
         chat_window = self.chats.get(session_id)
+        move_pos = self.get_pos(chat_window) 
+        
+        if chat_window.docked:
+            move_pos = chat_window.docked_at
+
+        if not chat_window.pinned:
+            chat_window.hide()
+            self.head.show()
+            self.move_window(self.head, move_pos)
+
+    def on_chat_box_docked(self, session_id):
+        chat_window = self.chats.get(session_id)
         current_pos = self.get_pos(chat_window) 
 
-        chat_window.hide()
-        
-        self.head.show()
-        self.move_window(self.head, self.get_pos(self.head))
+        chat_window.set_docked_at(current_pos)
+
 
     def new_chat(self, profile_id: str, provider_id: str):
         session_id = self.assistant.create_session(provider_id=provider_id, profile_id=profile_id)
         chat = ChatBox(session_id, self.assistant.get_assistant(session_id))
         chat.dismissed.connect(self.on_chat_box_dismissed)
+        chat.dock_clicked.connect(self.on_chat_box_docked)
         self.chats[session_id] = chat
        
         return session_id
