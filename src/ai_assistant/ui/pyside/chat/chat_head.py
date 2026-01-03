@@ -5,7 +5,9 @@ from PySide6.QtCore import Qt, Signal, QTimer, QPoint, QPropertyAnimation, QEasi
 from PySide6.QtGui import QPixmap, QAction, QColor, QPainter
 
 from ai_assistant.ui.pyside.chat.chat_bubble import ChatBubbleContainer
+from ai_assistant.ui.pyside.movable import movable
 
+@movable
 class ChatHead(QWidget):
     clicked = Signal(str)
     settings_clicked = Signal()
@@ -157,6 +159,7 @@ class ChatHead(QWidget):
             self.main_layout.setDirection(QHBoxLayout.LeftToRight)
 
     def mousePressEvent(self, event):
+        print("Normal click")
         if event.button() == Qt.LeftButton:
             if self.chat_head_image.geometry().contains(self.head_container.mapFromParent(event.pos())):
                 if self.active_session:

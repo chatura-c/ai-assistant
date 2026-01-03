@@ -2,7 +2,7 @@ from abc import abstractmethod
 from PySide6.QtWidgets import (QLabel, QLineEdit, QPushButton, QScrollArea, QTextEdit, QWidget, 
                              QVBoxLayout, QHBoxLayout, QFrame, QSizePolicy, 
                              QGraphicsDropShadowEffect, QTextBrowser)
-from PySide6.QtCore import Qt, Signal, QThread, QTimer, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, Signal, QThread, QTimer, QPropertyAnimation, QEasingCurve, QPoint
 from PySide6.QtGui import QColor, QFont, QFontMetrics
 
 # Assuming these imports exist in your project
@@ -10,6 +10,8 @@ from ai_assistant.ui.pyside.chat.chat_bubble import ChatBubbleContainer
 from ai_assistant.ui.pyside.context_bar import ContextBar
 from ai_assistant.ui.pyside.styles import scrollbar_style
 from ai_assistant.ui.pyside.icons import dock_icon, pin_icon
+from ai_assistant.ui.pyside.movable import movable
+
 # UI Constants for easy tweaking
 OPACITY = 0.65 
 
@@ -136,8 +138,7 @@ class AutoResizingTextEdit(QTextEdit):
 
         super().keyPressEvent(event)
 
-
-
+@movable
 class ChatBox(QWidget):
     dismissed = Signal(str)
     dock_clicked = Signal(str)
