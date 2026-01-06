@@ -50,8 +50,8 @@ class DesktopAssistant(QObject):
         assistants = self.assistant.uow.assistants.get_all()
         try:
             if len(assistants) > 0:
-                session_id = self.new_chat(assistants[0].profile_id, assistants[0].provider_id)
-                profile = self.assistant.uow.profiles.get(assistants[0].profile_id)
+                session_id = self.new_chat(assistants[1].profile_id, assistants[1].provider_id)
+                profile = self.assistant.uow.profiles.get(assistants[1].profile_id)
                 self.head.add_new_chat(profile.picture if profile.picture.strip() != "" else "assets/icon.png", session_id)
                 self.head.show()
             else:
@@ -126,6 +126,5 @@ class DesktopAssistant(QObject):
     @Slot(str)
     def add_context(self, text):
         # self.context_text = text
-        print("REceie", text)
         for box in self.chats.values():
             box.on_context_text_received(text)

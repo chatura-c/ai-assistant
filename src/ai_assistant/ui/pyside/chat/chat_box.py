@@ -2,15 +2,15 @@ from abc import abstractmethod
 from PySide6.QtWidgets import (QLabel, QLineEdit, QPushButton, QScrollArea, QTextEdit, QWidget, 
                              QVBoxLayout, QHBoxLayout, QFrame, QSizePolicy, 
                              QGraphicsDropShadowEffect, QTextBrowser)
-from PySide6.QtCore import Qt, Signal, QThread, QTimer, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, Signal, QThread, QTimer, QPropertyAnimation, QEasingCurve, QPoint
 from PySide6.QtGui import QColor, QFont, QFontMetrics
 
-# Assuming these imports exist in your project
 from ai_assistant.ui.pyside.chat.chat_bubble import ChatBubbleContainer
 from ai_assistant.ui.pyside.context_bar import ContextBar
 from ai_assistant.ui.pyside.styles import scrollbar_style
 from ai_assistant.ui.pyside.icons import dock_icon, pin_icon
-# UI Constants for easy tweaking
+from ai_assistant.ui.pyside.movable import movable
+
 OPACITY = 0.65 
 
 class AskWorker(QThread):
@@ -65,7 +65,7 @@ class AutoResizingTextEdit(QTextEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setPlaceholderText("Type a message...")
+        self.setPlaceholderText("(ctrl/shift + enter to send.)")
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff) 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
@@ -136,8 +136,7 @@ class AutoResizingTextEdit(QTextEdit):
 
         super().keyPressEvent(event)
 
-
-
+@movable
 class ChatBox(QWidget):
     dismissed = Signal(str)
     dock_clicked = Signal(str)
@@ -324,11 +323,8 @@ class ChatBox(QWidget):
         self.chat_layout.insertWidget(idx, msg)
         msg.show()
         
-        # QTimer.singleShot(10, lambda: self._refresh_layout(msg))
-        # QTimer.singleShot(50, self.scroll_to_bottom)
 
     def _refresh_layout(self, msg_widget):
-        """Forces the layout to recalculate and bubbles to adjust their internal height."""
         if hasattr(msg_widget, 'bubble'):
             msg_widget.bubble.adjust_height()
         self.container.updateGeometry()

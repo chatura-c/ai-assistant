@@ -21,6 +21,7 @@ class AdapterWindowPlacingStrategy(WindowPlacingStrategy):
         self.adapter = adapter
 
     def move_window(self, ref, x, y):
+        print('moving to ',x ,y)
         self.adapter.move_window(x, y)
 
     def get_window_position(self, ref, id=None):
@@ -31,7 +32,8 @@ class QWindowPlacingStrategy(WindowPlacingStrategy):
         ref.move(QPoint(x,y))
 
     def get_window_position(self, ref, id=None):
-        return ref.pos()
+        pos = ref.pos()
+        return (pos.x(), pos.y()) 
 
 class UI:
     def __init__(self, assistant_manager, adapter, app_name):
