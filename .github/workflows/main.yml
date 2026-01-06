@@ -1,8 +1,8 @@
 name: build app
 on:
   push:
-    tags:
-      - 'v*' 
+    branches:
+      - ci
 
 jobs:
   package:
@@ -36,10 +36,10 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpyside6-dev libegl1-mesa libxkbcommon-x11-0
+          sudo apt-get install -y libpyside6-dev libegl1-mesa
 
       - name: briefcase package
-        run: briefcase package --no-sign -b
+        run: briefcase package
 
       - name: upload installer
         uses: actions/upload-artifact@v4
