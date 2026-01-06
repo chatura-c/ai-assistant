@@ -6,8 +6,8 @@ authors = [
     {name = "chaturajd",email = "chaturajd@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.13,<3.15"
-dependencies = [
+requires-python = ">=3.13"
+requires = [
     "pyside6-essentials (>=6.10.1,<7.0.0)",
     "keyring (>=25.7.0,<26.0.0)",
     "platformdirs (>=4.5.1,<5.0.0)",
@@ -18,8 +18,41 @@ dependencies = [
 packages = [{include = "ai_assistant", from = "src"}]
 
 [tool.poetry.scripts]
-start = "src.app:main"
+start = "ai_assistant.__main__:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.briefcase]
+project_name = "AI Assistant"
+bundle = "com.chaturajd"
+version = "0.1.0"
+license = "MIT"
+author = "chaturajd"
+author_email = "chaturajd@gmail.com"
+sources = ["src/ai_assistant"]
+module = "ai_assistant"
+
+requires = [
+    "pyside6-essentials (>=6.10.1,<7.0.0)",
+    "keyring (>=25.7.0,<26.0.0)",
+    "platformdirs (>=4.5.1,<5.0.0)",
+    "openai (>=2.14.0,<3.0.0)"
+]
+
+[tool.briefcase.app.ai-assistant.macOS]
+requires = ["pyside6-essentials>=6.10.1"]
+
+[tool.briefcase.app.ai-assistant.windows]
+requires = ["pyside6-essentials>=6.10.1"]
+
+[tool.briefcase.app.ai-assistant.linux]
+requires = [
+    "pyside6-essentials>=6.10.1",
+]
+
+[dependency-groups]
+dev = [
+    "briefcase (>=0.3.26,<0.4.0)"
+]

@@ -126,6 +126,5 @@ class DesktopAssistant(QObject):
     @Slot(str)
     def add_context(self, text):
         # self.context_text = text
-        print("REceie", text)
         for box in self.chats.values():
             box.on_context_text_received(text)
